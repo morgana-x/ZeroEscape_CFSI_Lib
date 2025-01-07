@@ -15,11 +15,11 @@ public partial class Program
 
         if (!File.Exists(filePath))
         {
-            if (Directory.Exists(filePath)) // Packing is not supported yet!!!
+            if (Directory.Exists(filePath))
             {
                 Console.WriteLine("Packing...");
                 CFSI_Lib.Repack(filePath);
-                Console.WriteLine("packed!");
+                Console.WriteLine("Packed!");
                 return;
             }
             Console.WriteLine($"File {filePath} doesn't exist!");
@@ -27,7 +27,7 @@ public partial class Program
         }
 
         Console.WriteLine("Extracting...");
-        new CFSI_Lib(filePath).ExtractAll(filePath + "_extracted");
+        new CFSI_Lib(filePath).ExtractAll(filePath.Replace(".cfsi","") + "_extracted");
         Console.WriteLine("Extracted!");
     }
 }
