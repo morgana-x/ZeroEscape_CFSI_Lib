@@ -34,7 +34,7 @@ Short for CFSI_Variable_Integer
             + Int32 - File Size
 + DATA_OFFSET = The cursor position of the stream at this point is the start of the data section
 + Use the algorithm on https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding for alignment on DATA_OFFSET, with Align 0x10
-foreach file:
++ foreach file:
   + fileDataLocation = DATA_OFFSET + file_Offset
   + byte[fileSize] - raw file data @fileDataLocation
   
