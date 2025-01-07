@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35303.130
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZE_CFSI_Lib", "ZE_CFSI_Lib\ZE_CFSI_Lib.csproj", "{75305E43-0D1D-4411-950B-64C8908C4DDF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZE_CFSI_Extract", "CFSI_ExtractPack\ZE_CFSI_Extract.csproj", "{E415554B-AA88-46DC-AB38-08DE18D296A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZE_CFSI_Extract", "ZE_CFSI_Extract\ZE_CFSI_Extract.csproj", "{77C2C5A1-828B-45AF-B88D-D3DC702349DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{75305E43-0D1D-4411-950B-64C8908C4DDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75305E43-0D1D-4411-950B-64C8908C4DDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75305E43-0D1D-4411-950B-64C8908C4DDF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E415554B-AA88-46DC-AB38-08DE18D296A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E415554B-AA88-46DC-AB38-08DE18D296A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E415554B-AA88-46DC-AB38-08DE18D296A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E415554B-AA88-46DC-AB38-08DE18D296A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77C2C5A1-828B-45AF-B88D-D3DC702349DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77C2C5A1-828B-45AF-B88D-D3DC702349DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77C2C5A1-828B-45AF-B88D-D3DC702349DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77C2C5A1-828B-45AF-B88D-D3DC702349DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
