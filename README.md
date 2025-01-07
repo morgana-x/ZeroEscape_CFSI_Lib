@@ -7,7 +7,7 @@ Currently only capable of extracting files, as I haven't figured out the logic b
 # CFSI DOCUMENTATION
 
 ## CFSI_VInt (1-3 Bytes)
-ZFSI_Variable Integer for short
+Short for CFSI_Variable_Integer
 + Read unsigned byte, if the byte doesn't equal 252, that is the value
 + If initial byte equals 252, then the real value is an Integer-16 / UShort
 
