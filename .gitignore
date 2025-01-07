@@ -9,3 +9,5 @@
 /ZE_CFSI_Lib/obj
 /ZE_CFSI_Extract/bin/Debug/net8.0
 /ZE_CFSI_Extract/obj
+/ZE_CFSI_Extract/bin/Release/net8.0
+/ZE_CFSI_Lib/bin/Release/net8.0
