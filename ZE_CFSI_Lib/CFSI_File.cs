@@ -2,24 +2,19 @@
 {
     public class CFSI_File
     {
-        public string Path { get; set; }
-        public string Name { get; set; }
+        public string Path { get; set; } // Full path (Within archive)
+        public string Name { get; set; } // File name and extension
         public int Size { get; set; }
-        public int Offset { get; set; }
-        public long FileOffset { get; set; } = 0;
-
+        public int Offset { get; set; } // Offset relative to Data section
+        public long FileOffset { get; set; } = 0; // Absolute offset in file
         public bool Compressed { get; set; } = false;
 
-        public int UncompressedSize { get; set; } = 0;
-
-        public short GzipSign { get; set; } = 0;
-
-        public CFSI_File(string name, string path, int unknownData, int size)
+        public CFSI_File(string name, string path, int offset, int size)
         {
-            this.Path = path;
-            this.Name = name;
-            this.Offset = unknownData;
-            this.Size = size;
+            Path = path;
+            Name = name;
+            Offset = offset;
+            Size = size;
         }
     }
 }

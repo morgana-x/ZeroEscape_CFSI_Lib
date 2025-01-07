@@ -98,6 +98,7 @@ namespace ZE_CFSI_Lib
             stream.Close();
             return compressedMemoryStream;
         }
+        // TODO: Make Repack work with 00000000.cfsi / Multiple sub directories
         public static void Repack(string folder, string outPath="")
         {
             if (outPath == "")
