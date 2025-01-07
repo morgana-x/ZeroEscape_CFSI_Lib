@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35303.130
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZE_CFSI_Lib", "ZE_CFSI_Lib\ZE_CFSI_Lib.csproj", "{75305E43-0D1D-4411-950B-64C8908C4DDF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZE_CFSI_Lib", "ZE_CFSI_Lib\ZE_CFSI_Lib.csproj", "{75305E43-0D1D-4411-950B-64C8908C4DDF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFSI_ExtractPack", "CFSI_ExtractPack\CFSI_ExtractPack.csproj", "{E415554B-AA88-46DC-AB38-08DE18D296A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZE_CFSI_Extract", "CFSI_ExtractPack\ZE_CFSI_Extract.csproj", "{E415554B-AA88-46DC-AB38-08DE18D296A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,5 +1,4 @@
-﻿using static ZE_CFSI_Lib.Util;
-namespace ZE_CFSI_Lib
+﻿namespace ZE_CFSI_Lib
 {
     public class CFSI_Lib
     {
@@ -8,7 +7,7 @@ namespace ZE_CFSI_Lib
 
         public CFSI_Lib(Stream newStream)
         {
-            this.stream = newStream;
+            stream = newStream;
             ReadHeader();
         }
         public CFSI_Lib(string filePath)
@@ -18,14 +17,12 @@ namespace ZE_CFSI_Lib
         }
         public byte[] GetFileData(CFSI_File file)
         {
-            if (file.FileOffset == 0) { return new byte[0]; }
             stream.Position = file.FileOffset;
-            return ReadBytes(stream, (uint)file.Size);
+            return CFSI_Util.Read_ByteArray(stream, (uint)file.Size);
         }
         public void ExtractFile(CFSI_File file, string OutFolder)
         {
             string outPath = OutFolder + file.Path.Replace("/", "\\");
-            Directory.CreateDirectory(OutFolder);
             Directory.CreateDirectory(outPath.Replace(file.Name, ""));
             File.WriteAllBytes(outPath, GetFileData(file));
         }
@@ -39,31 +36,34 @@ namespace ZE_CFSI_Lib
         {
             stream.Seek(0, SeekOrigin.Begin);
 
-            uint numOfFolders = ReadCfsiStupidShort(stream);
+            uint numOfFolders = CFSI_Util.Read_CFSI_VINT(stream);
 
             for (ushort i = 0; i < numOfFolders; i++)
             {
-                string folderName = ReadCfsiString(stream);
+                string folderName = CFSI_Util.Read_CFSI_String(stream);
 
                 if (folderName.Length == 1 && folderName[0] == (char)0)
                     folderName = "\\";
 
-                uint numOfFiles = ReadCfsiStupidShort(stream);
+                uint numOfFiles = CFSI_Util.Read_CFSI_VINT(stream);
 
                 for (ushort a = 0; a < numOfFiles; a++)
                 {
-                    string fileName = ReadCfsiString(stream);
-                    int offset = ReadInt(stream);
-                    int size = ReadInt(stream);
-                    Files.Add(new CFSI_File(fileName, folderName + fileName, offset, size));
+                    string fileName = CFSI_Util.Read_CFSI_String(stream);
+
+                    int fileUnknownData = CFSI_Util.Read_Int32(stream);
+                    int fileSize = CFSI_Util.Read_Int32(stream);
+
+                    Files.Add(new CFSI_File(fileName, folderName + fileName, fileUnknownData, fileSize));
                 }
             }
-            SkipWhiteSpace(stream);
+            CFSI_Util.Skip_CFSI_Whitespace(stream);
+
             foreach (var file in Files)
             {
                 file.FileOffset = stream.Position;
                 stream.Position += file.Size;
-                SkipWhiteSpace(stream);
+                CFSI_Util.Skip_CFSI_Whitespace(stream);
             }
         }
     }

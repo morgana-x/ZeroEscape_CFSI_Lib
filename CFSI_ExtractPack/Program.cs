@@ -1,5 +1,4 @@
 ﻿using ZE_CFSI_Lib;
-
 public partial class Program
 {
     public static void Main(string[] args)
@@ -18,6 +17,7 @@ public partial class Program
             Console.WriteLine($"File {filePath} doesn't exist!");
             return;
         }
+
         Console.WriteLine("Extracting...");
         new CFSI_Lib(filePath).ExtractAll(filePath + "_extracted");
         Console.WriteLine("Extracted!");
