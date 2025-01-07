@@ -9,7 +9,7 @@ Currently only capable of extracting files, as I haven't figured out the logic b
 ## CFSI_VInt (1-3 Bytes)
 Short for CFSI_Variable_Integer
 + Read unsigned byte, if the byte doesn't equal 252, that is the value
-+ If initial byte equals 252, then the real value is an Integer-16 / UShort
++ If initial byte equals 252, then the real value is an UInt16/UShort that comes after it
 
 ## CFSI_String
 + Byte For Length
