@@ -14,6 +14,13 @@ public partial class Program
 
         if (!File.Exists(filePath))
         {
+            if (Directory.Exists(filePath) && false) // Packing is not supported yet!!!
+            {
+                Console.WriteLine("Packing...");
+                CFSI_Lib.Repack(filePath);
+                Console.WriteLine("packed!");
+                return;
+            }
             Console.WriteLine($"File {filePath} doesn't exist!");
             return;
         }
