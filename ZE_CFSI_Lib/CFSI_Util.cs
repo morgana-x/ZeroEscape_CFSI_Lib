@@ -19,7 +19,7 @@ namespace ZE_CFSI_Lib
         }
         public static void Write_CFSI_String(Stream stream, string text)
         {
-            byte[] bytes = Encoding.ASCII.GetBytes(text);
+            byte[] bytes = Encoding.ASCII.GetBytes(text.Replace("\\", "/"));
             stream.WriteByte((byte)bytes.Length);
             stream.Write(bytes);
         }

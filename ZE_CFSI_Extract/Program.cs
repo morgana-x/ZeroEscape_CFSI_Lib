@@ -7,6 +7,7 @@ public partial class Program
         if (args.Length ==0)
         {
             Console.WriteLine("Drag and drop file to extract!");
+            Console.WriteLine("OR Drag and drop folder to repack!");
             filePath = Console.ReadLine().Replace("\"", "");
         }
         else
@@ -14,7 +15,7 @@ public partial class Program
 
         if (!File.Exists(filePath))
         {
-            if (Directory.Exists(filePath) && false) // Packing is not supported yet!!!
+            if (Directory.Exists(filePath)) // Packing is not supported yet!!!
             {
                 Console.WriteLine("Packing...");
                 CFSI_Lib.Repack(filePath);

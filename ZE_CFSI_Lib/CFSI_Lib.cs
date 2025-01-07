@@ -89,6 +89,15 @@ namespace ZE_CFSI_Lib
             if (fileName.EndsWith(".rtz")) return true;
             return false;
         }
+        private static MemoryStream GetCompressedData(Stream stream)
+        {
+            MemoryStream compressedMemoryStream = new MemoryStream();   
+            var gstream = new GZipStream(compressedMemoryStream, CompressionMode.Compress);
+            stream.CopyTo(compressedMemoryStream);
+            stream.Dispose();
+            stream.Close();
+            return compressedMemoryStream;
+        }
         public static void Repack(string folder, string outPath="")
         {
             if (outPath == "")
@@ -99,44 +108,61 @@ namespace ZE_CFSI_Lib
             string badString = Directory.GetParent(folder).FullName + "\\";
 
             FileStream cfsiStream = new FileStream(outPath, FileMode.Create, FileAccess.Write);
-            string[] SubDirectories = Directory.GetDirectories(folder, "*", new EnumerationOptions() { RecurseSubdirectories = true });
-            CFSI_Util.Write_CFSI_VINT(cfsiStream, (ushort)SubDirectories.Length);
+            List<string> SubDirectories = new List<string>();
+       
             List<long> FileOffsets = new List<long>();
-            List<string> FilePaths = new List<string>();
-            for (int i = 0; i < SubDirectories.Length; i++)
+
+            List<string> FilePaths = Directory.GetFiles(folder, "*", new EnumerationOptions() { RecurseSubdirectories = true }).ToList();
+            
+            foreach(var file in FilePaths)
+            {
+                string folderPath = file.Replace(badString, "");
+                if (folderPath.Contains("\\"))
+                    folderPath = folderPath.Substring(0,folderPath.LastIndexOf("\\"));
+                if (!folderPath.Equals("\\") && folderPath.Length > 1)
+                    folderPath += "\\";
+                
+                if (!SubDirectories.Contains(folderPath))
+                    SubDirectories.Add(folderPath);
+            }
+            CFSI_Util.Write_CFSI_VINT(cfsiStream, (ushort)SubDirectories.Count);
+            for (int i = 0; i < SubDirectories.Count; i++)
             {
                 CFSI_Util.Write_CFSI_String(cfsiStream, SubDirectories[i].Replace(badString, ""));
-                string[] Files = Directory.GetFiles(SubDirectories[i], "*", new EnumerationOptions() { RecurseSubdirectories = true});
+                string[] Files = FilePaths.Where(f  => f.Contains(SubDirectories[i])).ToArray();
                 CFSI_Util.Write_CFSI_VINT(cfsiStream, (ushort)Files.Length);
-                long offset = 0;
+                int offset = 0;
                 for (int x=0; x<Files.Length; x++)
                 {
                     FileOffsets.Add(offset);
-                    FilePaths.Add(Files[i]);
-                    CFSI_Util.Write_CFSI_String(cfsiStream, Files[i].Replace(badString, ""));
-                    cfsiStream.Write(BitConverter.GetBytes(offset/16));
-                    byte[] fileData = File.ReadAllBytes(Files[i]);
+                    CFSI_Util.Write_CFSI_String(cfsiStream, Files[x].Replace(badString, "").Replace(SubDirectories[i],""));
+                    cfsiStream.Write(BitConverter.GetBytes((int)(offset/16)));
+                    byte[] fileData = File.ReadAllBytes(Files[x]);
                     cfsiStream.Write(BitConverter.GetBytes(fileData.Length));
-                    offset += fileData.Length;
+                    offset += (fileData.Length) + CFSI_Util.CFSI_Get_Padding(fileData.Length);
                     
                 }
             }
             long dataSection = CFSI_Util.CFSI_Get_Aligned(cfsiStream.Position);
-            for (int i = 0; i < FileOffsets.Count; i++)
+            for (int i = 0; i < FilePaths.Count; i++)
             {
                 cfsiStream.Position = dataSection + FileOffsets[i];
                 byte[] fileData = new byte[] { };
                 if (ShouldBeCompressed(FilePaths[i]))
                 {
-                    var gstream = new GZipStream(new FileStream(FilePaths[i], FileMode.Open, FileAccess.Read), CompressionMode.Compress);
-                    fileData = new byte[gstream.Length];
-                    gstream.Read(fileData);
+                    var s = GetCompressedData(new FileStream(FilePaths[i], FileMode.Open, FileAccess.ReadWrite));
+                    s.Position = 0;
+                    s.CopyTo(cfsiStream);
+                    s.Dispose();
+                    s.Close();
+                    continue;
                 }
-                else
-                    fileData = File.ReadAllBytes(FilePaths[i]);
+                fileData = File.ReadAllBytes(FilePaths[i]);
                 
                 cfsiStream.Write(fileData);
             }
+            cfsiStream.Close();
+            cfsiStream.Dispose();
         }
     }
 }
