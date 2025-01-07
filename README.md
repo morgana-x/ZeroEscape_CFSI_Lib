@@ -4,7 +4,7 @@ A library to interface with CFSI Archives from ZE: Zero Time Dilemma
 Currently only capable of extracting files, as I haven't figured out the logic behind the whitespacing and the section of file data for each file that I presume is responsible for it.
 
 # Credit
-While I Reverse-Engineered 95% of the archive and it's quirks on my own, I wasn't able to figure out the padding and alignment, as such when I looked at ALuigi's BMS script it ended up helping me quite a bit. (Before that when extracting I just skipped any non zero bytes when padding was present, and was unable to progress in repacking)
+While I Reverse-Engineered 95% of the archive and it's quirks on my own, I wasn't able to figure out the padding and alignment, as such when I looked at ALuigi's BMS script it ended up helping me quite a bit. (Before that when extracting I just skipped any zero bytes when padding was present, and was unable to progress in repacking)
 
 Resources used:
 + https://www.zenhax.com/viewtopic.php@t=2697.html
