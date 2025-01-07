@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/CFSI_ExtractPack/bin/Debug/net8.0
+/CFSI_ExtractPack/obj
+/ZE_CFSI_Lib/bin/Debug/net8.0
+/ZE_CFSI_Lib/obj
