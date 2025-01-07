@@ -3,6 +3,13 @@ A library to interface with CFSI Archives from ZE: Zero Time Dilemma
 
 Currently only capable of extracting files, as I haven't figured out the logic behind the whitespacing and the section of file data for each file that I presume is responsible for it.
 
+# Credit
+While I Reverse-Engineered 95% of the archive and it's quirks on my own, I wasn't able to figure out the padding and alignment, as such when I looked at ALuigi's BMS script it ended up helping me quite a bit. (Before that when extracting I just skipped any zero bytes when padding was present, and was unable to progress in repacking)
+
+Resources used:
++ https://www.zenhax.com/viewtopic.php@t=2697.html
++ http://aluigi.org/bms/zero_time_dilemma.bms
++ https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
 
 # CFSI DOCUMENTATION
 
@@ -15,12 +22,7 @@ Short for CFSI_Variable_Integer
 + Byte For Length
 + Array of bytes for text
 
-## CFSI_WhiteSpace
-+ Variable Size
-+ Skip to the first non zero byte
-
-##  CFSI Archive
-
+## CFSI_Archive
 + CFSI_VINT - Number of Folders
   + For number of folders:
       + CFSI_String - Folder Name
@@ -28,15 +30,11 @@ Short for CFSI_Variable_Integer
         + For Number of files:
             + CFSI_String Name
                 + Filepath can be assumed as Foldername + Filename
-            + 4-bytes ????
+            + Int32 - Offset (Needs to be multiplied by 16)
             + Int32 - File Size
-            + Strongly reccomend storing Filepath and adding to a list of global files as that is the order that the data section follows
-+ ==============================
-+ Raw File Data Section
-+ ============================== 
-  + CFSI_WhiteSpace - Whitespace
-  + Byte Array [File 1's Size] - File 1's Raw Data
-  + CFSI_WhiteSpace
-  + Byte Array [File 2's Size] - File 2's Raw Data
-  + CFSI_Whitespace
-  + ......etc
++ DATA_OFFSET = The cursor position of the stream at this point is the start of the data section
++ Use the algorithm on https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding for alignment on DATA_OFFSET, with Align 0x10
++ foreach file:
+  + fileDataLocation = DATA_OFFSET + file_Offset
+  + byte[fileSize] - raw file data @fileDataLocation
+  
