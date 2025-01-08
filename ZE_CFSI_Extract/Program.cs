@@ -16,6 +16,7 @@ public partial class Program
             return;
         }
         Console.WriteLine("Extracting...");
+
         var cfsi = new CFSI_Lib(filePath);
         cfsi.ExtractAll(filePath.Replace(".cfsi", "") + "_extracted", decompressCompressedFiles:true);
         cfsi.Dispose();
@@ -36,12 +37,5 @@ public partial class Program
             Execute(Console.ReadLine().Replace("\"", ""));
         }
 
-    }
-    private static void FancyPrint(string text, ConsoleColor color)
-    {
-        var oldCol = Console.ForegroundColor;
-        Console.ForegroundColor = color;
-        Console.WriteLine(text);
-        Console.ForegroundColor = oldCol;
     }
 }

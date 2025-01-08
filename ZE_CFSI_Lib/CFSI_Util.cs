@@ -9,7 +9,7 @@ namespace ZE_CFSI_Lib
         // the way of getting the padding of the offsets for files was sourced off Aluigi's BMS script
         // Credits to Aluigi for figuring that out!
 
-        private static int CFSI_Align = 0x10; // http://aluigi.org/bms/zero_time_dilemma.bms
+        private const int CFSI_Align = 0x10; // http://aluigi.org/bms/zero_time_dilemma.bms
         public static string Read_CFSI_String(Stream stream)
         {
             int stringLen = stream.ReadByte();
@@ -48,21 +48,21 @@ namespace ZE_CFSI_Lib
             stream.Write(BitConverter.GetBytes(num));
         }
         // https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
-        internal static int CFSI_Get_Aligned(int offset)
+        internal static int CFSI_Get_Aligned(int offset, int align = CFSI_Align)
         {
-            return offset + CFSI_Get_Padding(offset);
+            return offset + CFSI_Get_Padding(offset, align);
         }
-        internal static long CFSI_Get_Aligned(long offset)
+        internal static long CFSI_Get_Aligned(long offset, int align = CFSI_Align)
         {
-            return offset + CFSI_Get_Padding(offset);
+            return offset + CFSI_Get_Padding(offset, align);
         }
-        internal static int CFSI_Get_Padding(int offset)
+        internal static int CFSI_Get_Padding(int offset, int align = CFSI_Align)
         {
-            return ((CFSI_Align - (offset % CFSI_Align)) % CFSI_Align);
+            return ((align - (offset % align)) % align);
         }
-        internal static long CFSI_Get_Padding(long offset)
+        internal static long CFSI_Get_Padding(long offset, int align = CFSI_Align)
         {
-            return ((CFSI_Align - (offset % CFSI_Align)) % CFSI_Align);
+            return ((align - (offset % align)) % align);
         }
         public static string CFSI_Get_FolderPath(string sourceFilePath, string file)
         {
@@ -88,7 +88,7 @@ namespace ZE_CFSI_Lib
         {
             MemoryStream compressedMemoryStream = new MemoryStream();
             
-            var gstream = new GZipStream(compressedMemoryStream, CompressionLevel.Fastest);
+            var gstream = new GZipStream(compressedMemoryStream, CompressionLevel.Optimal);
             stream.Seek(0, SeekOrigin.Begin);
             stream.CopyTo(compressedMemoryStream);
             stream.Dispose();

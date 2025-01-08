@@ -133,7 +133,7 @@ namespace ZE_CFSI_Lib
             {
                 CFSI_Util.Write_CFSI_String(cfsiStream, SubDirectories[i].Replace(SourceDirectoryPath, "") + "\\");
                 CFSI_Util.Write_CFSI_VINT(cfsiStream, (ushort)SubDirectoriesFiles[i].Count);
-                SubDirectoriesFiles[i] = SubDirectoriesFiles[i].Select(fn => fn).OrderBy(f => f.Replace(SourceDirectoryPath, "").Replace(SubDirectories[i] + "\\", "")).ToList();
+                //SubDirectoriesFiles[i] = SubDirectoriesFiles[i].Select(fn => fn).OrderBy(f => f.Replace(SourceDirectoryPath, "").Replace(SubDirectories[i] + "\\", "")).ToList();
                 foreach (var file in SubDirectoriesFiles[i])
                 {
                     FilePaths_Reordered.Add(file);
@@ -147,15 +147,10 @@ namespace ZE_CFSI_Lib
                     int fileSize = (recompressRequiredFiles && CFSI_Util.CFSI_ShouldBeCompressed(file)) ? CFSI_Util.CFSI_Get_Compressed_Size(file) : CFSI_Util.CFSI_Get_Size(file);
                     cfsiStream.Write(BitConverter.GetBytes(fileSize));
 
-                    int totalSize = fileSize+CFSI_Util.CFSI_Get_Padding(fileSize);
-                    relative_data_offset += totalSize;
+                    relative_data_offset += CFSI_Util.CFSI_Get_Aligned(fileSize);
                 }
                 // Some kind of padding added between subdirectories in data???
-                // Maybe has different Align to file padding to be annoying
-                // For some reason repacked archive is always a bit smaller
-                // Repacked 00000000.cfsi crashes game when used, unlike bgm.cfsi and voice.cfsi
-                //offset += 20; // Remove if causing issues
-                //offset = CFSI_Util.CFSI_Get_Aligned(offset); // Remove if causing issues
+                //relative_data_offset = CFSI_Util.CFSI_Get_Aligned(relative_data_offset); // or maybe +=16 or 20 // Remove if causing issues
             }
             long dataSection = CFSI_Util.CFSI_Get_Aligned(cfsiStream.Position);
             for (int i = 0; i < FilePaths_Reordered.Count; i++)
