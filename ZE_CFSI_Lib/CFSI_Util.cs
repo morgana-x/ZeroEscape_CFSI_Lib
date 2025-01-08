@@ -48,25 +48,25 @@ namespace ZE_CFSI_Lib
             stream.Write(BitConverter.GetBytes(num));
         }
         // https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
-        public static int CFSI_Get_Aligned(int offset)
+        internal static int CFSI_Get_Aligned(int offset)
         {
             return offset + CFSI_Get_Padding(offset);
         }
-        public static long CFSI_Get_Aligned(long offset)
+        internal static long CFSI_Get_Aligned(long offset)
         {
             return offset + CFSI_Get_Padding(offset);
         }
-        public static int CFSI_Get_Padding(int offset)
+        internal static int CFSI_Get_Padding(int offset)
         {
             return ((CFSI_Align - (offset % CFSI_Align)) % CFSI_Align);
         }
-        public static long CFSI_Get_Padding(long offset)
+        internal static long CFSI_Get_Padding(long offset)
         {
             return ((CFSI_Align - (offset % CFSI_Align)) % CFSI_Align);
         }
-        public static string CFSI_Get_FolderPath(string badString, string file)
+        public static string CFSI_Get_FolderPath(string sourceFilePath, string file)
         {
-            string folderPath = file.Replace(badString, "");
+            string folderPath = file.Replace(sourceFilePath, "");
             if (folderPath.Contains("\\"))
                 folderPath = folderPath.Substring(0, folderPath.LastIndexOf("\\"));
             else folderPath = ((char)(byte)(0)).ToString();
@@ -74,22 +74,59 @@ namespace ZE_CFSI_Lib
                 folderPath = folderPath.Substring(0, folderPath.Length - 1);
             return folderPath;
         }
-        internal static bool CFSI_ShouldBeCompressed(string fileName)
+
+       
+        public static bool CFSI_ShouldBeCompressed(string fileName)
         {
             if (fileName.EndsWith(".orb")) return true;
             if (fileName.EndsWith(".uaz")) return true;
             if (fileName.EndsWith(".rtz")) return true;
-            //  if (fileName.EndsWith(".bin")) return true; // May not always be case test when repacking 00000000 is more complete
+            if (fileName.EndsWith(".bin")) return true; // May not always be case test when repacking 00000000 is more complete
             return false;
         }
-        internal static MemoryStream CFSI_GetCompressed(Stream stream)
+        internal static MemoryStream CFSI_Get_Compressed(Stream stream)
         {
             MemoryStream compressedMemoryStream = new MemoryStream();
-            var gstream = new GZipStream(compressedMemoryStream, CompressionLevel.Optimal);
+            
+            var gstream = new GZipStream(compressedMemoryStream, CompressionLevel.Fastest);
+            stream.Seek(0, SeekOrigin.Begin);
             stream.CopyTo(compressedMemoryStream);
             stream.Dispose();
             stream.Close();
+          
             return compressedMemoryStream;
+        }
+        internal static MemoryStream CFSI_Get_Compressed(string path)
+        {
+            FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            var newStream = CFSI_Get_Compressed(fs);
+            fs.Dispose();
+            fs.Close();
+            return newStream;
+        }
+        internal static int CFSI_Get_Compressed_Size(Stream stream)
+        {
+            MemoryStream compressedMemoryStream = CFSI_Get_Compressed(stream);
+            int length = (int)compressedMemoryStream.Length;
+            compressedMemoryStream.Dispose();
+            compressedMemoryStream.Close();
+            return length;
+        }
+        internal static int CFSI_Get_Compressed_Size(string path)
+        {
+            FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            int length = CFSI_Get_Compressed_Size(fs);
+            fs.Dispose();
+            fs.Close();
+            return (int)length;
+        }
+        internal static int CFSI_Get_Size(string path)
+        {
+            FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            int length = (int)fs.Length;
+            fs.Dispose();
+            fs.Close();
+            return (int)length;
         }
         internal static int Read_Int32(Stream stream)
         {

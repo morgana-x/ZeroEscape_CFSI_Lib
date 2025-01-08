@@ -8,16 +8,18 @@ public partial class Program
             if (Directory.Exists(filePath))
             {
                 Console.WriteLine("Packing...");
-                CFSI_Lib.Repack(filePath);
+                CFSI_Lib.Repack(filePath, recompressRequiredFiles:true);
                 Console.WriteLine("Packed!");
                 return;
             }
             Console.WriteLine($"File {filePath} doesn't exist!");
             return;
         }
-
         Console.WriteLine("Extracting...");
-        new CFSI_Lib(filePath).ExtractAll(filePath.Replace(".cfsi", "") + "_extracted");
+        var cfsi = new CFSI_Lib(filePath);
+        cfsi.ExtractAll(filePath.Replace(".cfsi", "") + "_extracted", decompressCompressedFiles:true);
+        cfsi.Dispose();
+
         Console.WriteLine("Extracted!");
     }
     public static void Main(string[] args)
@@ -34,5 +36,12 @@ public partial class Program
             Execute(Console.ReadLine().Replace("\"", ""));
         }
 
+    }
+    private static void FancyPrint(string text, ConsoleColor color)
+    {
+        var oldCol = Console.ForegroundColor;
+        Console.ForegroundColor = color;
+        Console.WriteLine(text);
+        Console.ForegroundColor = oldCol;
     }
 }
