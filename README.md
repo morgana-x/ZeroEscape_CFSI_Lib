@@ -3,7 +3,7 @@ A library to interface with CFSI Archives from ZE: Zero Time Dilemma
 
 ### Capabilities
 + Extracting all files
-+ Repacking all files except 00000000.cfsi
++ Repacking all files ~~except 00000000.cfsi~~ 00000000.cfsi can be repacked now however the repacking is inaccurate for that archive, causing game to crash on loading the repacked 00000000.cfsi
 + Extracting individual files via API in code
 # Credit
 While I Reverse-Engineered 95% of the archive and it's quirks on my own, I wasn't able to figure out the padding and alignment, as such when I looked at ALuigi's BMS script it ended up helping me quite a bit. (Before that when extracting I just skipped any zero bytes when padding was present, and was unable to progress in repacking)
