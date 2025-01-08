@@ -60,7 +60,7 @@ namespace ZE_CFSI_Lib
                 {
                     string fileName = CFSI_Util.Read_CFSI_String(stream);
 
-                    int fileOffset = CFSI_Util.Read_Int32(stream);
+                    int fileOffset = CFSI_Util.Read_Int32(stream) * 16;
                     int fileSize = CFSI_Util.Read_Int32(stream);
 
                     Files.Add(new CFSI_File(fileName, folderName + fileName, fileOffset, fileSize));
@@ -71,7 +71,7 @@ namespace ZE_CFSI_Lib
 
             foreach (var file in Files)
             {
-                file.FileOffset = dataSection + (file.Offset * 16);
+                file.FileOffset = dataSection + file.Offset;
                 if (file.Size < 6)
                     continue;
                 stream.Position = file.FileOffset + 4;
@@ -82,23 +82,12 @@ namespace ZE_CFSI_Lib
                 file.Compressed = true;
             }
         }
-        private static bool ShouldBeCompressed(string fileName)
-        {
-            if (fileName.EndsWith(".orb")) return true;
-            if (fileName.EndsWith(".uaz")) return true;
-            if (fileName.EndsWith(".rtz")) return true;
-            return false;
-        }
-        private static MemoryStream GetCompressedData(Stream stream)
-        {
-            MemoryStream compressedMemoryStream = new MemoryStream();   
-            var gstream = new GZipStream(compressedMemoryStream, CompressionMode.Compress);
-            stream.CopyTo(compressedMemoryStream);
-            stream.Dispose();
-            stream.Close();
-            return compressedMemoryStream;
-        }
+     
+
         // TODO: Make Repack work with 00000000.cfsi / Multiple sub directories
+
+ 
+
         public static void Repack(string folder, string outPath="")
         {
             if (outPath == "")
@@ -109,34 +98,36 @@ namespace ZE_CFSI_Lib
             string badString = Directory.GetParent(folder).FullName + "\\";
 
             FileStream cfsiStream = new FileStream(outPath, FileMode.Create, FileAccess.Write);
-            List<string> SubDirectories = new List<string>();
-       
+            List<string> SubDirectories =  new List<string>();
+            List<List<string>> SubDirectoriesFiles = new List<List<string>>();
+
             List<long> FileOffsets = new List<long>();
 
-            List<string> FilePaths = Directory.GetFiles(folder, "*", new EnumerationOptions() { RecurseSubdirectories = true }).ToList();
-            
+            List<string> FilePaths = Directory.GetFiles(folder, "*", new EnumerationOptions() { RecurseSubdirectories = true }).Select(fn => fn).OrderBy(f => CFSI_Util.CFSI_Get_FolderPath(badString, f)).ToList();
+
+      
             foreach(var file in FilePaths)
             {
-                string folderPath = file.Replace(badString, "");
-                if (folderPath.Contains("\\"))
-                    folderPath = folderPath.Substring(0,folderPath.LastIndexOf("\\"));
-                if (!folderPath.Equals("\\") && folderPath.Length > 1)
-                    folderPath += "\\";
-                
+                string folderPath = CFSI_Util.CFSI_Get_FolderPath(badString,file);
+
                 if (!SubDirectories.Contains(folderPath))
+                {
                     SubDirectories.Add(folderPath);
+                    SubDirectoriesFiles.Add(new List<string>());
+                }
+                SubDirectoriesFiles[SubDirectories.IndexOf(folderPath)].Add(file);
             }
             CFSI_Util.Write_CFSI_VINT(cfsiStream, (ushort)SubDirectories.Count);
             for (int i = 0; i < SubDirectories.Count; i++)
             {
-                CFSI_Util.Write_CFSI_String(cfsiStream, SubDirectories[i].Replace(badString, ""));
-                string[] Files = FilePaths.Where(f  => f.Contains(SubDirectories[i])).ToArray();
+                CFSI_Util.Write_CFSI_String(cfsiStream, SubDirectories[i].Replace(badString, "") + "\\");
+                string[] Files = SubDirectoriesFiles[i].ToArray();
                 CFSI_Util.Write_CFSI_VINT(cfsiStream, (ushort)Files.Length);
                 int offset = 0;
                 for (int x=0; x<Files.Length; x++)
                 {
                     FileOffsets.Add(offset);
-                    CFSI_Util.Write_CFSI_String(cfsiStream, Files[x].Replace(badString, "").Replace(SubDirectories[i],""));
+                    CFSI_Util.Write_CFSI_String(cfsiStream,Files[x].Replace(badString, "").Replace(SubDirectories[i] + "\\", ""));
                     cfsiStream.Write(BitConverter.GetBytes((int)(offset/16)));
                     byte[] fileData = File.ReadAllBytes(Files[x]);
                     cfsiStream.Write(BitConverter.GetBytes(fileData.Length));
@@ -148,19 +139,17 @@ namespace ZE_CFSI_Lib
             for (int i = 0; i < FilePaths.Count; i++)
             {
                 cfsiStream.Position = dataSection + FileOffsets[i];
-                byte[] fileData = new byte[] { };
-                if (ShouldBeCompressed(FilePaths[i]))
+
+                if (CFSI_Util.CFSI_ShouldBeCompressed(FilePaths[i]))
                 {
-                    var s = GetCompressedData(new FileStream(FilePaths[i], FileMode.Open, FileAccess.ReadWrite));
+                    var s = CFSI_Util.CFSI_GetCompressed(new FileStream(FilePaths[i], FileMode.Open, FileAccess.ReadWrite));
                     s.Position = 0;
                     s.CopyTo(cfsiStream);
                     s.Dispose();
                     s.Close();
                     continue;
                 }
-                fileData = File.ReadAllBytes(FilePaths[i]);
-                
-                cfsiStream.Write(fileData);
+                cfsiStream.Write(File.ReadAllBytes(FilePaths[i]));
             }
             cfsiStream.Close();
             cfsiStream.Dispose();

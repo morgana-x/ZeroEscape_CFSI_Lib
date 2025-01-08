@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.IO.Compression;
+using System.Text;
 namespace ZE_CFSI_Lib
 {
     internal class CFSI_Util
@@ -19,7 +20,13 @@ namespace ZE_CFSI_Lib
         }
         public static void Write_CFSI_String(Stream stream, string text)
         {
+
             byte[] bytes = Encoding.ASCII.GetBytes(text.Replace("\\", "/"));
+            if (bytes.Length == 2 && bytes[1] == 47) // Skip writing empty string
+            {
+                stream.WriteByte(0);
+                return;
+            }
             stream.WriteByte((byte)bytes.Length);
             stream.Write(bytes);
         }
@@ -57,7 +64,33 @@ namespace ZE_CFSI_Lib
         {
             return ((CFSI_Align - (offset % CFSI_Align)) % CFSI_Align);
         }
-
+        public static string CFSI_Get_FolderPath(string badString, string file)
+        {
+            string folderPath = file.Replace(badString, "");
+            if (folderPath.Contains("\\"))
+                folderPath = folderPath.Substring(0, folderPath.LastIndexOf("\\"));
+            else folderPath = ((char)(byte)(0)).ToString();
+            if ((folderPath.EndsWith("\\") || folderPath.EndsWith("/")) && folderPath.Length > 1)
+                folderPath = folderPath.Substring(0, folderPath.Length - 1);
+            return folderPath;
+        }
+        internal static bool CFSI_ShouldBeCompressed(string fileName)
+        {
+            if (fileName.EndsWith(".orb")) return true;
+            if (fileName.EndsWith(".uaz")) return true;
+            if (fileName.EndsWith(".rtz")) return true;
+            //  if (fileName.EndsWith(".bin")) return true; // May not always be case test when repacking 00000000 is more complete
+            return false;
+        }
+        internal static MemoryStream CFSI_GetCompressed(Stream stream)
+        {
+            MemoryStream compressedMemoryStream = new MemoryStream();
+            var gstream = new GZipStream(compressedMemoryStream, CompressionLevel.Optimal);
+            stream.CopyTo(compressedMemoryStream);
+            stream.Dispose();
+            stream.Close();
+            return compressedMemoryStream;
+        }
         internal static int Read_Int32(Stream stream)
         {
             byte[] buff = new byte[4];
