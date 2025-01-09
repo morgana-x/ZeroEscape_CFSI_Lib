@@ -78,11 +78,12 @@ namespace ZE_CFSI_Lib
        
         public static bool CFSI_ShouldBeCompressed(string fileName)
         {
-            if (fileName.EndsWith(".orb")) return true;
+            if (fileName.EndsWith(".orb")) return true; // For future reference just note that these archives need to be decompressed via GZIP, then processed
             if (fileName.EndsWith(".uaz")) return true;
             if (fileName.EndsWith(".rtz")) return true;
-            if (fileName.EndsWith(".bin")) return true; // May not always be case test when repacking 00000000 is more complete
-            return false;
+            if (fileName.EndsWith(".bft")) return true;
+            if (fileName.EndsWith(".pfx")) return true;
+            return false; //Trying to match compression of these causes errors, these archives should have their own tool anyway
         }
         internal static MemoryStream CFSI_Get_Compressed(Stream stream)
         {

@@ -29,7 +29,8 @@ namespace ZE_CFSI_Lib
             stream.Position = file.FileOffset;
             if (file.Compressed && decompressCompressedFiles)
             {
-                GZipStream gzipStream = new GZipStream(new MemoryStream(CFSI_Util.Read_ByteArray(stream, (uint)file.Size)), CompressionMode.Decompress);
+                stream.Position += 4;
+                GZipStream gzipStream = new GZipStream(new MemoryStream(CFSI_Util.Read_ByteArray(stream, (uint)(file.Size - 4))), CompressionMode.Decompress);
                 return CFSI_Util.Read_ByteArray(gzipStream, (uint)file.Size);
             }
             return CFSI_Util.Read_ByteArray(stream, (uint)file.Size);
@@ -46,7 +47,6 @@ namespace ZE_CFSI_Lib
             foreach (CFSI_File file in Files)
                 ExtractFile(file, OutFolder, decompressCompressedFiles);
         }
-
 
         private void ReadHeader()
         {
@@ -82,17 +82,10 @@ namespace ZE_CFSI_Lib
                 stream.Position = file.FileOffset + 4;
                 if (CFSI_Util.Read_UInt16(stream) != 0x8b1f)
                     continue;
-                file.FileOffset += 4;
-                file.Size -= 4;
                 file.Compressed = true;
             }
         }
-     
 
-        // TODO: Make Repack work with 00000000.cfsi / Multiple sub directories
-        // + Milestone: 0000000.cfsi is repackable now, and the repacked file is re-extractable HOWEVER
-        // + Issue: Repacked file is consistently smaller
-        // + Issue: Game crashes when loading repacked 0000000.cfsi, unlike other repacked cfsis
         public static void Repack(string folder, string outPath="", bool recompressRequiredFiles = false)
         {
             if (outPath == "")
@@ -133,7 +126,7 @@ namespace ZE_CFSI_Lib
             {
                 CFSI_Util.Write_CFSI_String(cfsiStream, SubDirectories[i].Replace(SourceDirectoryPath, "") + "\\");
                 CFSI_Util.Write_CFSI_VINT(cfsiStream, (ushort)SubDirectoriesFiles[i].Count);
-                //SubDirectoriesFiles[i] = SubDirectoriesFiles[i].Select(fn => fn).OrderBy(f => f.Replace(SourceDirectoryPath, "").Replace(SubDirectories[i] + "\\", "")).ToList();
+
                 foreach (var file in SubDirectoriesFiles[i])
                 {
                     FilePaths_Reordered.Add(file);
@@ -149,8 +142,8 @@ namespace ZE_CFSI_Lib
 
                     relative_data_offset += CFSI_Util.CFSI_Get_Aligned(fileSize);
                 }
-                // Some kind of padding added between subdirectories in data???
-                //relative_data_offset = CFSI_Util.CFSI_Get_Aligned(relative_data_offset); // or maybe +=16 or 20 // Remove if causing issues
+
+                relative_data_offset = CFSI_Util.CFSI_Get_Aligned(relative_data_offset);
             }
             long dataSection = CFSI_Util.CFSI_Get_Aligned(cfsiStream.Position);
             for (int i = 0; i < FilePaths_Reordered.Count; i++)

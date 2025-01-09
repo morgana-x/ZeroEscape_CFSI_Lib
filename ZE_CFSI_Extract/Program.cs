@@ -8,7 +8,7 @@ public partial class Program
             if (Directory.Exists(filePath))
             {
                 Console.WriteLine("Packing...");
-                CFSI_Lib.Repack(filePath, recompressRequiredFiles:true);
+                CFSI_Lib.Repack(filePath);
                 Console.WriteLine("Packed!");
                 return;
             }
@@ -18,7 +18,7 @@ public partial class Program
         Console.WriteLine("Extracting...");
 
         var cfsi = new CFSI_Lib(filePath);
-        cfsi.ExtractAll(filePath.Replace(".cfsi", "") + "_extracted", decompressCompressedFiles:true);
+        cfsi.ExtractAll(filePath.Replace(".cfsi", "") + "_extracted");
         cfsi.Dispose();
 
         Console.WriteLine("Extracted!");
