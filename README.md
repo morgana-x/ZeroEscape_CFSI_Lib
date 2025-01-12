@@ -1,6 +1,8 @@
 # ZeroEscape_CFSI_Lib
 A library to interface with CFSI Archives from ZE: Zero Time Dilemma 
 
+Other tools for Zero Time Dilemma:
++ https://github.com/morgana-x/ZeroEscape_Bin_Extract (For .bin text files where translated text goes)
 ### Capabilities
 + Extracting all files
 + Repacking all files (including modded regardless of extra files / larger / smaller size)
