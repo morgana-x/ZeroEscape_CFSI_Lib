@@ -3,7 +3,7 @@ A library to interface with CFSI Archives from ZE: Zero Time Dilemma
 
 Other tools for Zero Time Dilemma:
 + https://github.com/morgana-x/ZeroEscape_Bin_Extract - .bin - localised text
-+ https://github.com/enler/RTZParser - .rtz - scripts
++ https://github.com/enler/RTZParser - .rtz - scripts (Mostly disassembling not recompiling to knowledge)
 ### Capabilities
 + Extracting all files
 + Repacking all files (including modded regardless of extra files / larger / smaller size)
