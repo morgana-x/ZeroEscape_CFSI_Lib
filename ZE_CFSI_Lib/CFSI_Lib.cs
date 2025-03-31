@@ -1,6 +1,4 @@
-﻿using System.IO.Compression;
-
-namespace ZE_CFSI_Lib
+﻿namespace ZE_CFSI_Lib
 {
     public class CFSI_Lib
     {
@@ -24,28 +22,32 @@ namespace ZE_CFSI_Lib
             stream.Close();
             Files.Clear();
         }
-        public byte[] GetFileData(CFSI_File file, bool decompressCompressedFiles = false)
+        public byte[] GetFileData(CFSI_File file)
         {
             stream.Position = file.FileOffset;
-            if (file.Compressed && decompressCompressedFiles)
+            if (file.Compressed)
             {
                 stream.Position += 4;
-                GZipStream gzipStream = new GZipStream(new MemoryStream(CFSI_Util.Read_ByteArray(stream, (uint)(file.Size - 4))), CompressionMode.Decompress);
-                return CFSI_Util.Read_ByteArray(gzipStream, (uint)file.Size);
+                MemoryStream inputStream = new(CFSI_Util.Read_ByteArray(stream, (file.Size - 4)));
+                MemoryStream tempStream = new();
+                ICSharpCode.SharpZipLib.GZip.GZip.Decompress(inputStream, tempStream, false);
+                inputStream.Dispose();
+                inputStream.Close();
+                return tempStream.ToArray();
             }
-            return CFSI_Util.Read_ByteArray(stream, (uint)file.Size);
+            return CFSI_Util.Read_ByteArray(stream, file.Size);
         }
-        public void ExtractFile(CFSI_File file, string OutFolder, bool decompressCompressedFiles = false)
+        public void ExtractFile(CFSI_File file, string OutFolder)
         {
-            string outPath = OutFolder + file.Path.Replace("/", "\\");
+            string outPath = Path.Combine(OutFolder, file.Path);  // +file.Path.Replace("/", "\\");
             Directory.CreateDirectory(outPath.Replace(file.Name, ""));
-            File.WriteAllBytes(outPath, GetFileData(file, decompressCompressedFiles));
+            File.WriteAllBytes(outPath, GetFileData(file));
         }
-        public void ExtractAll(string OutFolder, bool decompressCompressedFiles = false)
+        public void ExtractAll(string OutFolder)
         {
             if (!OutFolder.EndsWith("\\")) OutFolder += "\\";
             foreach (CFSI_File file in Files)
-                ExtractFile(file, OutFolder, decompressCompressedFiles);
+                ExtractFile(file, OutFolder);
         }
 
         private void ReadHeader()
@@ -86,7 +88,7 @@ namespace ZE_CFSI_Lib
             }
         }
 
-        public static void Repack(string folder, string outPath="", bool recompressRequiredFiles = false)
+        public static void Repack(string folder, string outPath="")
         {
             if (outPath == "")
                 outPath = folder + ".cfsi";
@@ -137,7 +139,7 @@ namespace ZE_CFSI_Lib
 
                     cfsiStream.Write(BitConverter.GetBytes(relative_data_offset/16)); // Division may not be accurate or done the same as in Zero Time Dillema's tools or something?
 
-                    int fileSize = (recompressRequiredFiles && CFSI_Util.CFSI_ShouldBeCompressed(file)) ? CFSI_Util.CFSI_Get_Compressed_Size(file) : CFSI_Util.CFSI_Get_Size(file);
+                    int fileSize = (CFSI_Util.CFSI_ShouldBeCompressed(file)) ? CFSI_Util.CFSI_Get_Compressed_Size(file) : CFSI_Util.CFSI_Get_Size(file);
                     cfsiStream.Write(BitConverter.GetBytes(fileSize));
 
                     relative_data_offset += CFSI_Util.CFSI_Get_Aligned(fileSize);
@@ -150,7 +152,7 @@ namespace ZE_CFSI_Lib
             {
                 cfsiStream.Position = dataSection + FileOffsets[i];
 
-                if (recompressRequiredFiles && CFSI_Util.CFSI_ShouldBeCompressed(FilePaths_Reordered[i]))
+                if (CFSI_Util.CFSI_ShouldBeCompressed(FilePaths_Reordered[i]))
                 {
                     var s = CFSI_Util.CFSI_Get_Compressed(FilePaths_Reordered[i]);
                     s.Seek(0, SeekOrigin.Begin);

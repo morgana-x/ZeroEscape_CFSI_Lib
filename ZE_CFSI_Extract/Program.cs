@@ -3,15 +3,15 @@ public partial class Program
 {
     static void Execute(string filePath)
     {
+        if (Directory.Exists(filePath))
+        {
+            Console.WriteLine("Packing...");
+            CFSI_Lib.Repack(filePath);
+            Console.WriteLine("Packed!");
+            return;
+        }
         if (!File.Exists(filePath))
         {
-            if (Directory.Exists(filePath))
-            {
-                Console.WriteLine("Packing...");
-                CFSI_Lib.Repack(filePath);
-                Console.WriteLine("Packed!");
-                return;
-            }
             Console.WriteLine($"File {filePath} doesn't exist!");
             return;
         }
@@ -34,8 +34,8 @@ public partial class Program
         {
             Console.WriteLine("Drag and drop file to extract!");
             Console.WriteLine("OR Drag and drop folder to repack!");
-            Execute(Console.ReadLine().Replace("\"", ""));
+            string filePath = Console.ReadLine().Replace("\"", "");
+            Execute(filePath);
         }
-
     }
 }

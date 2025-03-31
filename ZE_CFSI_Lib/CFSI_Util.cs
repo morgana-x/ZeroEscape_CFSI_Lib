@@ -1,5 +1,4 @@
-﻿using System.IO.Compression;
-using System.Text;
+﻿using System.Text;
 namespace ZE_CFSI_Lib
 {
     internal class CFSI_Util
@@ -85,19 +84,15 @@ namespace ZE_CFSI_Lib
             if (fileName.EndsWith(".pfx")) return true;
             return false; //Trying to match compression of these causes errors, these archives should have their own tool anyway
         }
-        internal static MemoryStream CFSI_Get_Compressed(Stream stream)
+        internal static Stream CFSI_Get_Compressed(Stream stream)
         {
+
             MemoryStream compressedMemoryStream = new MemoryStream();
-            
-            var gstream = new GZipStream(compressedMemoryStream, CompressionLevel.Optimal);
-            stream.Seek(0, SeekOrigin.Begin);
-            stream.CopyTo(compressedMemoryStream);
-            stream.Dispose();
-            stream.Close();
-          
+            compressedMemoryStream.Write(new byte[4] { 0, 0, 0, 0 });
+            ICSharpCode.SharpZipLib.GZip.GZip.Compress(stream, compressedMemoryStream, false, level: 2, bufferSize:512);
             return compressedMemoryStream;
         }
-        internal static MemoryStream CFSI_Get_Compressed(string path)
+        internal static Stream CFSI_Get_Compressed(string path)
         {
             FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             var newStream = CFSI_Get_Compressed(fs);
@@ -107,7 +102,7 @@ namespace ZE_CFSI_Lib
         }
         internal static int CFSI_Get_Compressed_Size(Stream stream)
         {
-            MemoryStream compressedMemoryStream = CFSI_Get_Compressed(stream);
+            Stream compressedMemoryStream = CFSI_Get_Compressed(stream);
             int length = (int)compressedMemoryStream.Length;
             compressedMemoryStream.Dispose();
             compressedMemoryStream.Close();
@@ -147,8 +142,10 @@ namespace ZE_CFSI_Lib
             stream.Read(buff, 0, buff.Length);
             return BitConverter.ToInt16(buff, 0);
         }
-        internal static byte[] Read_ByteArray(Stream stream, uint length)
+        internal static byte[] Read_ByteArray(Stream stream, int length = -1)
         {
+            if (length < 0)
+                length = (int)stream.Length;
             byte[] bytes = new byte[length];
             stream.Read(bytes);
             return bytes;
