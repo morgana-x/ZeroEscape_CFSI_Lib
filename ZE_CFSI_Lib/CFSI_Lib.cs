@@ -25,7 +25,7 @@
         }
         public byte[] GetFileData(CFSI_File file)
         {
-            stream.Position = file.FileOffset;
+            stream.Position = DataSectionStart + file.Offset + 4;
             if (file.Compressed)
             {
                 stream.Position += 4;
@@ -81,10 +81,9 @@
 
             foreach (var file in Files)
             {
-                file.FileOffset = DataSectionStart + file.Offset;
                 if (file.Size < 6)
                     continue;
-                stream.Position = file.FileOffset + 4;
+                stream.Position = DataSectionStart + file.Offset + 4;
                 if (CFSI_Util.Read_UInt16(stream) != 0x8b1f)
                     continue;
                 file.Compressed = true;
