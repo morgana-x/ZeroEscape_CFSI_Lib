@@ -28,14 +28,14 @@
             if (file.Compressed)
             {
                 stream.Position += 4;
-                MemoryStream inputStream = new(CFSI_Util.Read_ByteArray(stream, (file.Size - 4)));
+                MemoryStream inputStream = new(CFSI_Util.Read_ByteArray(stream, (int)(file.Size - 4)));
                 MemoryStream tempStream = new();
                 ICSharpCode.SharpZipLib.GZip.GZip.Decompress(inputStream, tempStream, false);
                 inputStream.Dispose();
                 inputStream.Close();
                 return tempStream.ToArray();
             }
-            return CFSI_Util.Read_ByteArray(stream, file.Size);
+            return CFSI_Util.Read_ByteArray(stream, (int)file.Size);
         }
         public void ExtractFile(CFSI_File file, string OutFolder)
         {
@@ -68,8 +68,8 @@
                 for (ushort a = 0; a < numOfFiles; a++)
                 {
                     string fileName = CFSI_Util.Read_CFSI_String(stream);
-                    int fileOffset = CFSI_Util.Read_Int32(stream) * 16;
-                    int fileSize = CFSI_Util.Read_Int32(stream);
+                    long fileOffset = CFSI_Util.Read_Unt32(stream) * 16;
+                    long fileSize = CFSI_Util.Read_Unt32(stream);
                     Files.Add(new CFSI_File(fileName, folderName + fileName, fileOffset, fileSize));
                 }
             }

@@ -124,12 +124,21 @@ namespace ZE_CFSI_Lib
             fs.Close();
             return (int)length;
         }
+
         internal static int Read_Int32(Stream stream)
         {
             byte[] buff = new byte[4];
             stream.Read(buff, 0, buff.Length);
             return BitConverter.ToInt32(buff, 0);
         }
+
+        internal static uint Read_Unt32(Stream stream)
+        {
+            byte[] buff = new byte[4];
+            stream.Read(buff, 0, buff.Length);
+            return BitConverter.ToUInt32(buff, 0);
+        }
+
         internal static ushort Read_UInt16(Stream stream)
         {
             byte[] buff = new byte[2];
