@@ -4,6 +4,7 @@
     {
         public Stream stream;
         public List<CFSI_File> Files = new List<CFSI_File>();
+        public long DataSectionStart = 0;
 
         public CFSI_Lib(Stream newStream)
         {
@@ -37,12 +38,14 @@
             }
             return CFSI_Util.Read_ByteArray(stream, (int)file.Size);
         }
+
         public void ExtractFile(CFSI_File file, string OutFolder)
         {
             string outPath = Path.Combine(OutFolder, file.Path);  // +file.Path.Replace("/", "\\");
             Directory.CreateDirectory(outPath.Replace(file.Name, ""));
             File.WriteAllBytes(outPath, GetFileData(file));
         }
+
         public void ExtractAll(string OutFolder)
         {
             if (!OutFolder.EndsWith("\\")) OutFolder += "\\";
@@ -68,17 +71,17 @@
                 for (ushort a = 0; a < numOfFiles; a++)
                 {
                     string fileName = CFSI_Util.Read_CFSI_String(stream);
-                    long fileOffset = CFSI_Util.Read_Unt32(stream) * 16;
-                    long fileSize = CFSI_Util.Read_Unt32(stream);
+                    uint fileOffset = CFSI_Util.Read_UInt32(stream) * 16;
+                    uint fileSize = CFSI_Util.Read_UInt32(stream);
                     Files.Add(new CFSI_File(fileName, folderName + fileName, fileOffset, fileSize));
                 }
             }
 
-            long dataSection = CFSI_Util.CFSI_Get_Aligned(stream.Position);
+            DataSectionStart = CFSI_Util.CFSI_Get_Aligned(stream.Position);
 
             foreach (var file in Files)
             {
-                file.FileOffset = dataSection + file.Offset;
+                file.FileOffset = DataSectionStart + file.Offset;
                 if (file.Size < 6)
                     continue;
                 stream.Position = file.FileOffset + 4;
@@ -137,7 +140,7 @@
 
                     CFSI_Util.Write_CFSI_String(cfsiStream, file.Replace(SourceDirectoryPath, "").Replace(SubDirectories[i] + "\\", ""));
 
-                    cfsiStream.Write(BitConverter.GetBytes(relative_data_offset/16)); // Division may not be accurate or done the same as in Zero Time Dillema's tools or something?
+                    cfsiStream.Write(BitConverter.GetBytes(relative_data_offset/16));
 
                     int fileSize = (CFSI_Util.CFSI_ShouldBeCompressed(file)) ? CFSI_Util.CFSI_Get_Compressed_Size(file) : CFSI_Util.CFSI_Get_Size(file);
                     cfsiStream.Write(BitConverter.GetBytes(fileSize));
@@ -152,15 +155,14 @@
             {
                 cfsiStream.Position = dataSection + FileOffsets[i];
 
+                Stream fs;
                 if (CFSI_Util.CFSI_ShouldBeCompressed(FilePaths_Reordered[i]))
-                {
-                    var s = CFSI_Util.CFSI_Get_Compressed(FilePaths_Reordered[i]);
-                    s.Seek(0, SeekOrigin.Begin);
-                    s.CopyTo(cfsiStream);
-                    s.Dispose();s.Close();
-                    continue;
-                }
-                cfsiStream.Write(File.ReadAllBytes(FilePaths_Reordered[i]));
+                    fs = CFSI_Util.CFSI_Get_Compressed(FilePaths_Reordered[i]);
+                else
+                    fs = File.OpenRead(FilePaths_Reordered[i]);
+                fs.Seek(0, SeekOrigin.Begin);
+                fs.CopyTo(cfsiStream);
+                fs.Dispose(); fs.Close();
             }
             cfsiStream.Close();
             cfsiStream.Dispose();

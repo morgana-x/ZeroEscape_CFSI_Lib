@@ -4,12 +4,12 @@
     {
         public string Path { get; set; } // Full path (Within archive)
         public string Name { get; set; } // File name and extension
-        public long Size { get; set; }
-        public long Offset { get; set; } // Offset relative to Data section
+        public uint Size { get; set; }
+        public uint Offset { get; set; } // Offset relative to Data section
         public long FileOffset { get; set; } = 0; // Absolute offset in file
         public bool Compressed { get; set; } = false;
 
-        public CFSI_File(string name, string path, long offset, long size)
+        public CFSI_File(string name, string path, uint offset, uint size)
         {
             Path = path;
             Name = name;

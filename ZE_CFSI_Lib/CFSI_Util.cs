@@ -12,10 +12,7 @@ namespace ZE_CFSI_Lib
         public static string Read_CFSI_String(Stream stream)
         {
             int stringLen = stream.ReadByte();
-            byte[] stringBuffer = new byte[stringLen];
-            stream.Read(stringBuffer, 0, stringLen);
-
-            return Encoding.ASCII.GetString(stringBuffer);
+            return Encoding.ASCII.GetString(Read_ByteArray(stream, stringLen));
         }
         public static void Write_CFSI_String(Stream stream, string text)
         {
@@ -74,16 +71,15 @@ namespace ZE_CFSI_Lib
             return folderPath;
         }
 
-       
+        private static string[] CompressedFileExtensions = new string[] { ".orb", ".uaz", ".rtz", ".bft", ".pfx" };
         public static bool CFSI_ShouldBeCompressed(string fileName)
         {
-            if (fileName.EndsWith(".orb")) return true; // For future reference just note that these archives need to be decompressed via GZIP, then processed
-            if (fileName.EndsWith(".uaz")) return true;
-            if (fileName.EndsWith(".rtz")) return true;
-            if (fileName.EndsWith(".bft")) return true;
-            if (fileName.EndsWith(".pfx")) return true;
-            return false; //Trying to match compression of these causes errors, these archives should have their own tool anyway
+            for (int i = 0; i < CompressedFileExtensions.Length; i++)
+                if (fileName.EndsWith(CompressedFileExtensions[i]))
+                    return true;
+            return false;
         }
+
         internal static Stream CFSI_Get_Compressed(Stream stream)
         {
 
@@ -125,31 +121,14 @@ namespace ZE_CFSI_Lib
             return (int)length;
         }
 
-        internal static int Read_Int32(Stream stream)
+        internal static uint Read_UInt32(Stream stream)
         {
-            byte[] buff = new byte[4];
-            stream.Read(buff, 0, buff.Length);
-            return BitConverter.ToInt32(buff, 0);
-        }
-
-        internal static uint Read_Unt32(Stream stream)
-        {
-            byte[] buff = new byte[4];
-            stream.Read(buff, 0, buff.Length);
-            return BitConverter.ToUInt32(buff, 0);
+            return BitConverter.ToUInt32(Read_ByteArray(stream, 4), 0);
         }
 
         internal static ushort Read_UInt16(Stream stream)
         {
-            byte[] buff = new byte[2];
-            stream.Read(buff, 0, buff.Length);
-            return BitConverter.ToUInt16(buff, 0);
-        }
-        internal static short Read_Int16(Stream stream)
-        {
-            byte[] buff = new byte[2];
-            stream.Read(buff, 0, buff.Length);
-            return BitConverter.ToInt16(buff, 0);
+            return BitConverter.ToUInt16(Read_ByteArray(stream, 2), 0);
         }
         internal static byte[] Read_ByteArray(Stream stream, int length = -1)
         {
