@@ -1,4 +1,4 @@
-﻿namespace ZE_CFSI_Lib
+namespace ZE_CFSI_Lib
 {
     public class CFSI_Lib
     {
@@ -25,18 +25,36 @@
         }
         public byte[] GetFileData(CFSI_File file)
         {
-            stream.Position = DataSectionStart + file.Offset + 4;
+            long filePosition = DataSectionStart + file.Offset;
+            stream.Position = filePosition;
+
             if (file.Compressed)
             {
-                stream.Position += 4;
-                MemoryStream inputStream = new(CFSI_Util.Read_ByteArray(stream, (int)(file.Size - 4)));
+                uint uncompressedSize = CFSI_Util.Read_UInt32(stream);
+
+                ushort gzipSignature = CFSI_Util.Read_UInt16(stream);
+                if (gzipSignature != 0x8b1f)
+                {
+                    throw new InvalidDataException("Invalid GZIP signature for compressed file");
+                }
+
+                stream.Position -= 2;
+
+                int compressedSize = (int)(file.Size - 4);
+                MemoryStream inputStream = new(CFSI_Util.Read_ByteArray(stream, compressedSize));
                 MemoryStream tempStream = new();
+
                 ICSharpCode.SharpZipLib.GZip.GZip.Decompress(inputStream, tempStream, false);
+
                 inputStream.Dispose();
                 inputStream.Close();
+
                 return tempStream.ToArray();
             }
-            return CFSI_Util.Read_ByteArray(stream, (int)file.Size);
+            else
+            {
+                return CFSI_Util.Read_ByteArray(stream, (int)file.Size);
+            }
         }
 
         public void ExtractFile(CFSI_File file, string OutFolder)
@@ -83,24 +101,28 @@
             {
                 if (file.Size < 6)
                     continue;
-                stream.Position = DataSectionStart + file.Offset + 4;
-                if (CFSI_Util.Read_UInt16(stream) != 0x8b1f)
-                    continue;
-                file.Compressed = true;
+
+                stream.Position = DataSectionStart + file.Offset;
+
+                uint uncompressedSize = CFSI_Util.Read_UInt32(stream);
+
+                ushort gzipSignature = CFSI_Util.Read_UInt16(stream);
+
+                file.Compressed = (gzipSignature == 0x8b1f);
             }
         }
 
-        public static void Repack(string folder, string outPath="")
+        public static void Repack(string folder, string outPath = "")
         {
             if (outPath == "")
                 outPath = folder + ".cfsi";
             if (!folder.EndsWith("\\"))
                 folder += "\\";
 
-            string SourceDirectoryPath = Directory.GetParent(folder).FullName + "\\";
+            string? SourceDirectoryPath = Directory.GetParent(folder)?.FullName + "\\";
 
             FileStream cfsiStream = new FileStream(outPath, FileMode.Create, FileAccess.Write);
-            List<string> SubDirectories =  new List<string>();
+            List<string> SubDirectories = new List<string>();
             List<List<string>> SubDirectoriesFiles = new List<List<string>>();
             List<string> FilePaths = Directory.GetFiles(folder, "*", new EnumerationOptions() { RecurseSubdirectories = true }).Select(fn => fn).OrderBy(f => CFSI_Util.CFSI_Get_FolderPath(SourceDirectoryPath, f)).ToList();
             List<string> FilePaths_Reordered = new List<string>();
@@ -108,9 +130,9 @@
 
             MemoryStream dataStream = new MemoryStream();
 
-            foreach(var file in FilePaths)
+            foreach (var file in FilePaths)
             {
-                string folderPath = CFSI_Util.CFSI_Get_FolderPath(SourceDirectoryPath,file);
+                string folderPath = CFSI_Util.CFSI_Get_FolderPath(SourceDirectoryPath, file);
 
                 if (!SubDirectories.Contains(folderPath))
                 {
@@ -128,25 +150,24 @@
 
             for (int i = 0; i < SubDirectories.Count; i++)
             {
-                CFSI_Util.Write_CFSI_String(cfsiStream, SubDirectories[i].Replace(SourceDirectoryPath, "") + "\\");
+                string folderPath = SubDirectories[i].Replace(SourceDirectoryPath, "");
+                if (!folderPath.EndsWith("\\") && !folderPath.EndsWith("/"))
+                {
+                    folderPath += "/";
+                }
+                CFSI_Util.Write_CFSI_String(cfsiStream, folderPath);
                 CFSI_Util.Write_CFSI_VINT(cfsiStream, (ushort)SubDirectoriesFiles[i].Count);
 
                 foreach (var file in SubDirectoriesFiles[i])
                 {
                     FilePaths_Reordered.Add(file);
-
                     FileOffsets.Add(relative_data_offset);
-
                     CFSI_Util.Write_CFSI_String(cfsiStream, file.Replace(SourceDirectoryPath, "").Replace(SubDirectories[i] + "\\", ""));
-
-                    cfsiStream.Write(BitConverter.GetBytes(relative_data_offset/16));
-
+                    cfsiStream.Write(BitConverter.GetBytes(relative_data_offset / 16));
                     int fileSize = (CFSI_Util.CFSI_ShouldBeCompressed(file)) ? CFSI_Util.CFSI_Get_Compressed_Size(file) : CFSI_Util.CFSI_Get_Size(file);
                     cfsiStream.Write(BitConverter.GetBytes(fileSize));
-
                     relative_data_offset += CFSI_Util.CFSI_Get_Aligned(fileSize);
                 }
-
                 relative_data_offset = CFSI_Util.CFSI_Get_Aligned(relative_data_offset);
             }
             long dataSection = CFSI_Util.CFSI_Get_Aligned(cfsiStream.Position);
@@ -163,6 +184,16 @@
                 fs.CopyTo(cfsiStream);
                 fs.Dispose(); fs.Close();
             }
+
+            long fileLength = cfsiStream.Length;
+            int remainder = (int)(fileLength % 16);
+            if (remainder != 0)
+            {
+                int paddingNeeded = 16 - remainder;
+                byte[] padding = new byte[paddingNeeded];
+                cfsiStream.Write(padding, 0, paddingNeeded);
+            }
+
             cfsiStream.Close();
             cfsiStream.Dispose();
         }
