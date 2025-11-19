@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 namespace ZE_CFSI_Lib
 {
     internal class CFSI_Util
@@ -16,32 +16,52 @@ namespace ZE_CFSI_Lib
         }
         public static void Write_CFSI_String(Stream stream, string text)
         {
-
-            byte[] bytes = Encoding.ASCII.GetBytes(text.Replace("\\", "/"));
-            if (bytes.Length == 2 && bytes[1] == 47) // Skip writing empty string
+            if (text == "\\" || text == "/")
             {
+                stream.WriteByte(1);
                 stream.WriteByte(0);
                 return;
             }
+
+            byte[] bytes = Encoding.ASCII.GetBytes(text.Replace("\\", "/"));
             stream.WriteByte((byte)bytes.Length);
             stream.Write(bytes);
         }
         public static uint Read_CFSI_VINT(Stream stream)
         {
-            uint value = (uint)stream.ReadByte();
-            if (value == 252)
-                value = (uint)Read_UInt16(stream);
-            return value;
+            byte firstByte = (byte)stream.ReadByte();
+
+            if (firstByte == 0xf8)
+            {
+                byte[] bytes = Read_ByteArray(stream, 2);
+                return BitConverter.ToUInt16(bytes, 0);
+            }
+            else if (firstByte == 0xfc)
+            {
+                byte[] bytes = Read_ByteArray(stream, 2);
+                return BitConverter.ToUInt16(bytes, 0);
+            }
+            else
+            {
+                return firstByte;
+            }
         }
+
         public static void Write_CFSI_VINT(Stream stream, ushort num)
         {
-            if (num < 252)
+            if (num < 0xf8)
             {
                 stream.WriteByte((byte)num);
-                return;
             }
-            stream.WriteByte(252);
-            stream.Write(BitConverter.GetBytes(num));
+            else if (num <= 0xffff)
+            {
+                stream.WriteByte(0xfc);
+                stream.Write(BitConverter.GetBytes(num));
+            }
+            else
+            {
+                throw new ArgumentException("Number too large for CFSI_VINT");
+            }
         }
         // https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
         internal static int CFSI_Get_Aligned(int offset, int align = CFSI_Align)
@@ -85,7 +105,7 @@ namespace ZE_CFSI_Lib
 
             MemoryStream compressedMemoryStream = new MemoryStream();
             compressedMemoryStream.Write(new byte[4] { 0, 0, 0, 0 });
-            ICSharpCode.SharpZipLib.GZip.GZip.Compress(stream, compressedMemoryStream, false, level: 2, bufferSize:512);
+            ICSharpCode.SharpZipLib.GZip.GZip.Compress(stream, compressedMemoryStream, false, level: 2, bufferSize: 512);
             return compressedMemoryStream;
         }
         internal static Stream CFSI_Get_Compressed(string path)
@@ -133,9 +153,24 @@ namespace ZE_CFSI_Lib
         internal static byte[] Read_ByteArray(Stream stream, int length = -1)
         {
             if (length < 0)
-                length = (int)stream.Length;
+                length = (int)(stream.Length - stream.Position);
+
             byte[] bytes = new byte[length];
-            stream.Read(bytes);
+            int bytesRead = 0;
+
+            while (bytesRead < length)
+            {
+                int read = stream.Read(bytes, bytesRead, length - bytesRead);
+                if (read == 0)
+                    break;
+                bytesRead += read;
+            }
+
+            if (bytesRead != length)
+            {
+                Array.Resize(ref bytes, bytesRead);
+            }
+
             return bytes;
         }
 
