@@ -1,44 +1,36 @@
 using System.Text;
+
 namespace ZE_CFSI_Lib
 {
     internal class CFSI_Util
     {
-        // http://aluigi.org/bms/zero_time_dilemma.bms
-        // Whilst all other aspects of file were manually investigated without looking at the script,
-        // the way of getting the padding of the offsets for files was sourced off Aluigi's BMS script
-        // Credits to Aluigi for figuring that out!
+        private const int CFSI_Align = 0x10;
 
-        private const int CFSI_Align = 0x10; // http://aluigi.org/bms/zero_time_dilemma.bms
         public static string Read_CFSI_String(Stream stream)
         {
-            int stringLen = stream.ReadByte();
-            if (stringLen < 0) return "";
-
-            byte[] bytes = Read_ByteArray(stream, stringLen);
-            return Encoding.ASCII.GetString(bytes);
+            int stringLen = (int)Read_CFSI_VINT(stream);
+            return Encoding.ASCII.GetString(Read_ByteArray(stream, stringLen));
         }
+
         public static void Write_CFSI_String(Stream stream, string text)
         {
+            if (text == "\\" || text == "/" || text == "\0")
+            {
+                Write_CFSI_VINT(stream, 1);
+                stream.WriteByte(0);
+                return;
+            }
 
-            text = text.Replace("\0", "");
             byte[] bytes = Encoding.ASCII.GetBytes(text.Replace("\\", "/"));
-
-            if (bytes.Length > 255)
-                throw new ArgumentException("String too long for CFSI format");
-
-            stream.WriteByte((byte)bytes.Length);
-            stream.Write(bytes, 0, bytes.Length);
+            Write_CFSI_VINT(stream, (ushort)bytes.Length);
+            stream.Write(bytes);
         }
+
         public static uint Read_CFSI_VINT(Stream stream)
         {
             byte firstByte = (byte)stream.ReadByte();
 
-            if (firstByte == 0xf8)
-            {
-                byte[] bytes = Read_ByteArray(stream, 2);
-                return BitConverter.ToUInt16(bytes, 0);
-            }
-            else if (firstByte == 0xfc)
+            if (firstByte == 0xF8 || firstByte == 0xFC)
             {
                 byte[] bytes = Read_ByteArray(stream, 2);
                 return BitConverter.ToUInt16(bytes, 0);
@@ -51,37 +43,27 @@ namespace ZE_CFSI_Lib
 
         public static void Write_CFSI_VINT(Stream stream, ushort num)
         {
-            if (num < 0xf8)
+            if (num < 0xF8)
             {
                 stream.WriteByte((byte)num);
             }
-            else if (num <= 0xffff)
-            {
-                stream.WriteByte(0xfc);
-                stream.Write(BitConverter.GetBytes(num));
-            }
             else
             {
-                throw new ArgumentException("Number too large for CFSI_VINT");
+                stream.WriteByte(0xFC);
+                stream.Write(BitConverter.GetBytes(num));
             }
         }
-        // https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
-        internal static int CFSI_Get_Aligned(int offset, int align = CFSI_Align)
-        {
-            return offset + CFSI_Get_Padding(offset, align);
-        }
+
         internal static long CFSI_Get_Aligned(long offset, int align = CFSI_Align)
         {
             return offset + CFSI_Get_Padding(offset, align);
         }
-        internal static int CFSI_Get_Padding(int offset, int align = CFSI_Align)
-        {
-            return ((align - (offset % align)) % align);
-        }
+
         internal static long CFSI_Get_Padding(long offset, int align = CFSI_Align)
         {
             return ((align - (offset % align)) % align);
         }
+
         public static string CFSI_Get_FolderPath(string sourceFilePath, string file)
         {
             string folderPath = file.Replace(sourceFilePath, "");
@@ -97,53 +79,57 @@ namespace ZE_CFSI_Lib
         }
 
         private static string[] CompressedFileExtensions = new string[] { ".orb", ".uaz", ".rtz", ".bft", ".pfx" };
+
         public static bool CFSI_ShouldBeCompressed(string fileName)
         {
-            for (int i = 0; i < CompressedFileExtensions.Length; i++)
-                if (fileName.EndsWith(CompressedFileExtensions[i]))
-                    return true;
-            return false;
+            string extension = Path.GetExtension(fileName).ToLower();
+            return CompressedFileExtensions.Contains(extension) || new FileInfo(fileName).Length > 1024;
         }
 
         internal static Stream CFSI_Get_Compressed(Stream stream)
         {
-
             MemoryStream compressedMemoryStream = new MemoryStream();
-            compressedMemoryStream.Write(new byte[4] { 0, 0, 0, 0 });
-            ICSharpCode.SharpZipLib.GZip.GZip.Compress(stream, compressedMemoryStream, false, level: 2, bufferSize: 512);
+
+            // Write uncompressed size header
+            compressedMemoryStream.Write(BitConverter.GetBytes((uint)stream.Length), 0, 4);
+
+            using (var gzipStream = new System.IO.Compression.GZipStream(compressedMemoryStream,
+                System.IO.Compression.CompressionMode.Compress, true))
+            {
+                stream.CopyTo(gzipStream);
+            }
+
+            compressedMemoryStream.Position = 0;
             return compressedMemoryStream;
         }
+
         internal static Stream CFSI_Get_Compressed(string path)
         {
-            FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-            var newStream = CFSI_Get_Compressed(fs);
-            fs.Dispose();
-            fs.Close();
-            return newStream;
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+            {
+                return CFSI_Get_Compressed(fs);
+            }
         }
+
         internal static int CFSI_Get_Compressed_Size(Stream stream)
         {
-            Stream compressedMemoryStream = CFSI_Get_Compressed(stream);
-            int length = (int)compressedMemoryStream.Length;
-            compressedMemoryStream.Dispose();
-            compressedMemoryStream.Close();
-            return length;
+            using (var compressedStream = CFSI_Get_Compressed(stream))
+            {
+                return (int)compressedStream.Length;
+            }
         }
+
         internal static int CFSI_Get_Compressed_Size(string path)
         {
-            FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-            int length = CFSI_Get_Compressed_Size(fs);
-            fs.Dispose();
-            fs.Close();
-            return (int)length;
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+            {
+                return CFSI_Get_Compressed_Size(fs);
+            }
         }
+
         internal static int CFSI_Get_Size(string path)
         {
-            FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-            int length = (int)fs.Length;
-            fs.Dispose();
-            fs.Close();
-            return (int)length;
+            return (int)new FileInfo(path).Length;
         }
 
         internal static uint Read_UInt32(Stream stream)
@@ -155,6 +141,7 @@ namespace ZE_CFSI_Lib
         {
             return BitConverter.ToUInt16(Read_ByteArray(stream, 2), 0);
         }
+
         internal static byte[] Read_ByteArray(Stream stream, int length = -1)
         {
             if (length < 0)
@@ -178,6 +165,5 @@ namespace ZE_CFSI_Lib
 
             return bytes;
         }
-
     }
 }
