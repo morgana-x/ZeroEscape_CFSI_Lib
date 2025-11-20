@@ -12,20 +12,22 @@ namespace ZE_CFSI_Lib
         public static string Read_CFSI_String(Stream stream)
         {
             int stringLen = stream.ReadByte();
-            return Encoding.ASCII.GetString(Read_ByteArray(stream, stringLen));
+            if (stringLen < 0) return "";
+
+            byte[] bytes = Read_ByteArray(stream, stringLen);
+            return Encoding.ASCII.GetString(bytes);
         }
         public static void Write_CFSI_String(Stream stream, string text)
         {
-            if (text == "\\" || text == "/")
-            {
-                stream.WriteByte(1);
-                stream.WriteByte(0);
-                return;
-            }
 
+            text = text.Replace("\0", "");
             byte[] bytes = Encoding.ASCII.GetBytes(text.Replace("\\", "/"));
+
+            if (bytes.Length > 255)
+                throw new ArgumentException("String too long for CFSI format");
+
             stream.WriteByte((byte)bytes.Length);
-            stream.Write(bytes);
+            stream.Write(bytes, 0, bytes.Length);
         }
         public static uint Read_CFSI_VINT(Stream stream)
         {
@@ -85,9 +87,12 @@ namespace ZE_CFSI_Lib
             string folderPath = file.Replace(sourceFilePath, "");
             if (folderPath.Contains("\\"))
                 folderPath = folderPath.Substring(0, folderPath.LastIndexOf("\\"));
-            else folderPath = ((char)(byte)(0)).ToString();
+            else
+                folderPath = "\0";
+
             if ((folderPath.EndsWith("\\") || folderPath.EndsWith("/")) && folderPath.Length > 1)
                 folderPath = folderPath.Substring(0, folderPath.Length - 1);
+
             return folderPath;
         }
 
