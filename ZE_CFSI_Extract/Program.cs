@@ -44,9 +44,6 @@ public partial class Program
 
         cfsi.ExtractAll(extractPath);
 
-        string extractJsonPath = Path.ChangeExtension(filePath, ".json");
-        cfsi.ExportStructureToJson(extractJsonPath);
-
         cfsi.Dispose();
         Console.WriteLine("Extracted successfully!");
     }
