@@ -60,16 +60,18 @@ namespace ZE_CFSI_Lib
             }
         }
 
-        public void ExtractFile(CFSI_File file, string outFolder)
+        public void ExtractFile(CFSI_File file, string outFolder, List<string>? extractedFiles = null)
         {
             string fullPath = Path.Combine(outFolder, file.Path.Replace("/", "\\"));
             string directory = Path.GetDirectoryName(fullPath) ?? outFolder;
 
             Directory.CreateDirectory(directory);
 
-            // Handle duplicate files
-            string actualPath = GetUniqueFilePath(fullPath);
+            string actualPath = GetUniqueFilePath(fullPath, extractedFiles);
+
             File.WriteAllBytes(actualPath, GetFileData(file));
+
+            extractedFiles?.Add(actualPath);
         }
 
         public void ExtractAll(string outFolder)
@@ -79,12 +81,13 @@ namespace ZE_CFSI_Lib
                 Directory.CreateDirectory(outFolder);
             }
 
+            List<string> extractedFiles = new List<string>();
+
             foreach (CFSI_File file in Files)
             {
-                ExtractFile(file, outFolder);
+                ExtractFile(file, outFolder, extractedFiles);
             }
 
-            // Generate JSON structure file for repacking compatibility
             GenerateStructureJson(outFolder);
         }
 
@@ -125,9 +128,12 @@ namespace ZE_CFSI_Lib
             }
         }
 
-        private string GetUniqueFilePath(string filePath)
+        private string GetUniqueFilePath(string filePath, List<string>? extractedFiles = null)
         {
-            if (!File.Exists(filePath))
+            bool existsOnDisk = File.Exists(filePath);
+            bool existsInList = extractedFiles?.Contains(filePath) == true;
+
+            if (!existsOnDisk && !existsInList)
             {
                 return filePath;
             }
@@ -143,7 +149,7 @@ namespace ZE_CFSI_Lib
             {
                 newFilePath = Path.Combine(directory, $"{fileName}_{counter}{extension}");
                 counter++;
-            } while (File.Exists(newFilePath));
+            } while (File.Exists(newFilePath) || (extractedFiles?.Contains(newFilePath) == true));
 
             return newFilePath;
         }
