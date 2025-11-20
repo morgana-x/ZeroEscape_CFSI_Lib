@@ -1,4 +1,6 @@
-﻿using ZE_CFSI_Lib;
+using ZE_CFSI_Lib;
+using System.Text.Json;
+
 public partial class Program
 {
     static void Execute(string filePath)
@@ -6,23 +8,49 @@ public partial class Program
         if (Directory.Exists(filePath))
         {
             Console.WriteLine("Packing...");
-            CFSI_Lib.Repack(filePath);
-            Console.WriteLine("Packed!");
+
+            string packJsonPath = Path.ChangeExtension(filePath, ".json");
+            if (!File.Exists(packJsonPath))
+            {
+                Console.WriteLine($"JSON file {packJsonPath} not found!");
+                return;
+            }
+
+            try
+            {
+                CFSI_Lib.RepackFromJson(filePath, packJsonPath, filePath + ".cfsi");
+                Console.WriteLine("Packed successfully!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Packing failed: {ex.Message}");
+            }
             return;
         }
+
         if (!File.Exists(filePath))
         {
-            Console.WriteLine($"File {filePath} doesn't exist!");
+            Console.WriteLine($"File {filePath} does not exist!");
             return;
         }
+
         Console.WriteLine("Extracting...");
 
         var cfsi = new CFSI_Lib(filePath);
-        cfsi.ExtractAll(filePath.Replace(".cfsi", "") + "_extracted");
-        cfsi.Dispose();
+        string extractPath = Path.Combine(
+            Path.GetDirectoryName(filePath) ?? Directory.GetCurrentDirectory(),
+            Path.GetFileNameWithoutExtension(filePath)
+        );
 
-        Console.WriteLine("Extracted!");
+        cfsi.ExtractAll(extractPath);
+
+        string extractJsonPath = Path.ChangeExtension(filePath, ".json");
+        cfsi.ExportStructureToJson(extractJsonPath);
+
+        cfsi.Dispose();
+        Console.WriteLine("Extracted successfully!");
     }
+
     public static void Main(string[] args)
     {
         if (args.Length > 0)
@@ -30,11 +58,19 @@ public partial class Program
             Execute(args[0]);
             return;
         }
+
         while (true)
         {
-            Console.WriteLine("Drag and drop file to extract!");
-            Console.WriteLine("OR Drag and drop folder to repack!");
-            string filePath = Console.ReadLine().Replace("\"", "");
+            Console.WriteLine("Drag and drop a file to extract!");
+            Console.WriteLine("Or drag and drop a folder to repack!");
+            string? filePath = Console.ReadLine()?.Replace("\"", "");
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                Console.WriteLine("Input path is empty, please re-enter!");
+                continue;
+            }
+
             Execute(filePath);
         }
     }
