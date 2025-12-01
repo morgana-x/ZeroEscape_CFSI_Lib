@@ -8,12 +8,12 @@ namespace ZE_CFSI_Lib
         // the way of getting the padding of the offsets for files was sourced off Aluigi's BMS script
         // Credits to Aluigi for figuring that out!
 
-        private const int CFSI_Align = 0x10; // http://aluigi.org/bms/zero_time_dilemma.bms
         public static string Read_CFSI_String(Stream stream)
         {
             int stringLen = stream.ReadByte();
             return Encoding.ASCII.GetString(Read_ByteArray(stream, stringLen));
         }
+
         public static void Write_CFSI_String(Stream stream, string text)
         {
 
@@ -37,7 +37,7 @@ namespace ZE_CFSI_Lib
 
         public static void Write_CFSI_VINT(Stream stream, ushort num)
         {
-            if (num != 0xFC && num < 0xFF)
+            if (num != 0xFC && num <= 0xFF)
             {
                 stream.WriteByte((byte)num);
                 return;
@@ -45,6 +45,9 @@ namespace ZE_CFSI_Lib
             stream.WriteByte(0xFC);
             stream.Write(BitConverter.GetBytes(num));
         }
+
+
+        private const int CFSI_Align = 0x10; // http://aluigi.org/bms/zero_time_dilemma.bms
 
         // https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
         internal static long CFSI_Get_Aligned(uint offset, int align = CFSI_Align)

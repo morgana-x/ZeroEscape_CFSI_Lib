@@ -5,8 +5,8 @@
         public Stream stream;
         public List<CFSI_File> Files = new List<CFSI_File>();
         public long DataSectionStart = 0;
-        public CFSI_Lib(string filePath) : this(File.OpenRead(filePath)){}
 
+        public CFSI_Lib(string filePath) : this(File.OpenRead(filePath)){}
         public CFSI_Lib(Stream newStream)
         {
             stream = newStream;
@@ -45,6 +45,7 @@
             stream.Close();
             Files.Clear();
         }
+
         public byte[] GetFileData(CFSI_File file)
         {
             stream.Position = DataSectionStart + file.Offset;
@@ -56,7 +57,10 @@
                 ICSharpCode.SharpZipLib.GZip.GZip.Decompress(inputStream, tempStream, false);
                 inputStream.Dispose();
                 inputStream.Close();
-                return tempStream.ToArray();
+                byte[] data = tempStream.ToArray();
+                tempStream.Dispose();
+                tempStream.Close();
+                return data;
             }
             return CFSI_Util.Read_ByteArray(stream, (int)file.Size);
         }
