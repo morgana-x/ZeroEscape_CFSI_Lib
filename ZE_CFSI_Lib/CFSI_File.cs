@@ -8,12 +8,13 @@
         public uint Offset { get; set; } // Offset relative to Data section
         public bool Compressed { get; set; } = false;
 
-        public CFSI_File(string name, string path, uint offset, uint size)
+        public CFSI_File(Stream stream, string folder)
         {
-            Path = path;
-            Name = name;
-            Offset = offset;
-            Size = size;
+            Name = CFSI_Util.Read_CFSI_String(stream);
+            Offset = CFSI_Util.Read_UInt32(stream) * 16;
+            Size = CFSI_Util.Read_UInt32(stream);
+
+            Path = folder + Name;
         }
     }
 }
